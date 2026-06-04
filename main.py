@@ -13,14 +13,16 @@ class Player:
         self.vy = 0.0
         self.img = pg.image.load("player/amazslime.png").convert_alpha()
         self.img_offset = (0.0, -2.0)
+        self.on_ground = False
 
     def update_vel(self, input_state):
-        self.vy += self.gravity
+        if not self.on_ground:
+            self.vy += self.gravity
 
         dx = get_axis(input_state, "x")
         self.vx = dx * self.speed
 
-        if input_state.events["z"].just_pressed:
+        if input_state.events["z"].just_pressed and self.on_ground:
             self.vy = -self.jump_strength
 
     def collide(self, rect):
@@ -33,6 +35,7 @@ class Player:
             else:
                 self.dest.left = rect.right
             self.vx = 0.0
+
         if pg.FRect(
                 self.dest.x, self.dest.y + self.vy, # x, y
                 self.dest.w, self.dest.h # w, h
@@ -42,6 +45,11 @@ class Player:
             else:
                 self.dest.top = rect.bottom
             self.vy = 0.0
+
+        if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
+            self.on_ground = True
+        else:
+            self.on_ground = False
 
     def apply_vel(self):
         self.dest.x += self.vx
