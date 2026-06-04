@@ -8,4 +8,4 @@ grid:
   6,5: stone
   8,3: stone
   9,3: stone
-  16,8: stone
+  16,8: stone # unreachable :skull:
