@@ -6,8 +6,8 @@ from systems import input_sys
 class Player:
     def __init__(self):
         self.speed = 1.2
-        self.jump_strength = 3.0
-        self.gravity = 0.1
+        self.jump_strength = 3.4
+        self.gravity = 0.16
         self.dest = pg.FRect(20.0, 20.0, 16.0, 14.0)
         self.vx = 0.0
         self.vy = 0.0
