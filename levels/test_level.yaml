@@ -1,0 +1,11 @@
+name: test level !!
+grid:
+  1,4: stone
+  2,4: stone
+  3,4: stone
+  4,4: stone
+  5,5: stone
+  6,5: stone
+  8,3: stone
+  9,3: stone
+  16,8: stone

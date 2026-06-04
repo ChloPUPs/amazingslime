@@ -1,12 +1,14 @@
+# Maybe add text in levels? Level Text in The Levl
+
 from typing import Literal
 import pygame as pg
 import sys
 from enum import Enum, auto
+import yaml
 from systems import input_sys
 
 
-class BlockID(Enum):
-    STONE = auto()
+type BlockID = Literal["stone"]
 
 
 class Level:
@@ -101,17 +103,14 @@ def run() -> None:
     input_state = input_sys.InputState()
 
     player = Player()
-    level = Level("test level", {
-        (1, 4): BlockID.STONE,
-        (2, 4): BlockID.STONE,
-        (3, 4): BlockID.STONE,
-        (4, 4): BlockID.STONE,
-        (5, 5): BlockID.STONE,
-        (6, 5): BlockID.STONE,
-        (8, 3): BlockID.STONE,
-        (9, 3): BlockID.STONE,
-    }, TILE_SIZE, {
-        BlockID.STONE: pg.image.load("levels/stone.png").convert(),
+
+    with open("levels/test_level.yaml") as f:
+        level_data = yaml.safe_load(f)
+        level_name = level_data["name"]
+        level_grid = {(int(key.split(",")[0]), int(key.split(",")[1])): level_data["grid"][key] for key in level_data["grid"]}
+
+    level = Level(level_name, level_grid, TILE_SIZE, {
+        "stone": pg.image.load("levels/stone.png").convert(),
     })
 
     while True:
