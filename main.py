@@ -11,6 +11,7 @@ class Player:
         self.dest = pg.FRect(20.0, 20.0, 16.0, 16.0)
         self.vx = 0.0
         self.vy = 0.0
+        self.img = pg.image.load("player/amazslime.png").convert()
 
     def update(self, input_state):
         self.vy += self.gravity
@@ -57,7 +58,7 @@ def run():
         player.update(input_state)
 
         display.fill("black")
-        pg.draw.rect(display, "lime", player.dest)
+        display.blit(player.img, player.dest)
 
         screen.blit(pg.transform.scale(display, screen.get_size()))
         clock.tick(FPS_TARGET)
