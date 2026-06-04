@@ -1,7 +1,6 @@
 from typing import Literal
 import pygame as pg
 import sys
-from dataclasses import dataclass
 from enum import Enum, auto
 from systems import input_sys
 
@@ -10,10 +9,21 @@ class BlockID(Enum):
     STONE = auto()
 
 
-@dataclass
 class Level:
-    name: str | None # Use file path if None
-    grid: dict[tuple[int, int], BlockID]
+    def __init__(self,
+            name: str | None,
+            grid: dict[tuple[int, int], BlockID],
+            tile_size: int,
+            assets: dict[BlockID, pg.Surface]) -> None:
+        self.name = name # Use file path if None
+        self.grid = grid
+        self.assets = assets
+        self._tile_size = tile_size
+
+    def draw(self, display: pg.Surface) -> None:
+        for key in self.grid:
+            display.blit(self.assets[self.grid[key]], 
+                    (key[0] * self._tile_size, key[1] * self._tile_size))
 
 
 class Player:
@@ -26,6 +36,9 @@ class Player:
         self.vy = 0.0
         self.img = pg.image.load("player/amazslime.png").convert_alpha()
         self.img_offset = (0.0, -2.0)
+        self.on_ground = False
+
+    def reset_on_ground(self):
         self.on_ground = False
 
     def update_vel(self, input_state: input_sys.InputState) -> None:
@@ -61,8 +74,6 @@ class Player:
 
         if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
             self.on_ground = True
-        else:
-            self.on_ground = False
 
     def apply_vel(self) -> None:
         self.dest.x += self.vx
@@ -82,6 +93,7 @@ def run() -> None:
     pg.init()
 
     FPS_TARGET = 60
+    TILE_SIZE = 16
 
     screen = pg.display.set_mode((640, 480))
     display = pg.Surface((screen.width / 2, screen.height / 2))
@@ -89,8 +101,18 @@ def run() -> None:
     input_state = input_sys.InputState()
 
     player = Player()
-    block = pg.FRect(20.0, 80.0, 16.0, 16.0)
-    block_img = pg.image.load("levels/stone.png").convert()
+    level = Level("test level", {
+        (1, 4): BlockID.STONE,
+        (2, 4): BlockID.STONE,
+        (3, 4): BlockID.STONE,
+        (4, 4): BlockID.STONE,
+        (5, 5): BlockID.STONE,
+        (6, 5): BlockID.STONE,
+        (8, 3): BlockID.STONE,
+        (9, 3): BlockID.STONE,
+    }, TILE_SIZE, {
+        BlockID.STONE: pg.image.load("levels/stone.png").convert(),
+    })
 
     while True:
         input_state.update_just_pressed()
@@ -101,11 +123,13 @@ def run() -> None:
             input_state.update_input(event)
 
         player.update_vel(input_state)
-        player.collide(block)
+        player.reset_on_ground()
+        for key in level.grid:
+            player.collide(pg.Rect(key[0] * TILE_SIZE, key[1] * TILE_SIZE, 16, 16))
         player.apply_vel()
 
         display.fill("black")
-        display.blit(block_img, block)
+        level.draw(display)
         pos = (player.dest.x + player.img_offset[0], player.dest.y + player.img_offset[1])
         display.blit(player.img, pos)
 
