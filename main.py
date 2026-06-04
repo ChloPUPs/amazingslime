@@ -132,6 +132,9 @@ def run() -> None:
         level.draw(display)
         pos = (player.dest.x + player.img_offset[0], player.dest.y + player.img_offset[1])
         display.blit(player.img, pos)
+        font = pg.font.SysFont("Arial", 16)
+        text = font.render(f"{level.name}", True, "white")
+        display.blit(text, (5, 5))
 
         screen.blit(pg.transform.scale(display, screen.get_size()))
         clock.tick(FPS_TARGET)
