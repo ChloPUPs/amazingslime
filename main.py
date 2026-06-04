@@ -1,10 +1,23 @@
+from typing import Literal
 import pygame as pg
 import sys
+from dataclasses import dataclass
+from enum import Enum, auto
 from systems import input_sys
 
 
+class BlockID(Enum):
+    STONE = auto()
+
+
+@dataclass
+class Level:
+    name: str | None # Use file path if None
+    grid: dict[tuple[int, int], BlockID]
+
+
 class Player:
-    def __init__(self):
+    def __init__(self) -> None:
         self.speed = 1.2
         self.jump_strength = 3.4
         self.gravity = 0.16
@@ -15,7 +28,7 @@ class Player:
         self.img_offset = (0.0, -2.0)
         self.on_ground = False
 
-    def update_vel(self, input_state):
+    def update_vel(self, input_state: input_sys.InputState) -> None:
         if not self.on_ground:
             self.vy += self.gravity
 
@@ -25,7 +38,7 @@ class Player:
         if input_state.events["z"].just_pressed and self.on_ground:
             self.vy = -self.jump_strength
 
-    def collide(self, rect):
+    def collide(self, rect: pg.FRect | pg.Rect) -> None:
         if pg.Rect(
                 self.dest.x + self.vx, self.dest.y, # x, y
                 self.dest.w, self.dest.h # w, h
@@ -51,12 +64,12 @@ class Player:
         else:
             self.on_ground = False
 
-    def apply_vel(self):
+    def apply_vel(self) -> None:
         self.dest.x += self.vx
         self.dest.y += self.vy
 
 
-def get_axis(input_state, axis):
+def get_axis(input_state: input_sys.InputState, axis: Literal["x", "y"]) -> float:
     if axis.lower() == "x":
         return input_state.events["right"].held - input_state.events["left"].held
     elif axis.lower() == "y":
@@ -65,7 +78,7 @@ def get_axis(input_state, axis):
         raise ValueError("Why?")
 
 
-def run():
+def run() -> None:
     pg.init()
 
     FPS_TARGET = 60
