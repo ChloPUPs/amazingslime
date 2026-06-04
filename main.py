@@ -5,11 +5,33 @@ from systems import input_sys
 
 class Player:
     def __init__(self):
+        self.speed = 1.2
+        self.jump_strength = 3.0
+        self.gravity = 0.1
         self.dest = pg.FRect(20.0, 20.0, 16.0, 16.0)
+        self.vx = 0.0
+        self.vy = 0.0
+
+    def update(self, input_state):
+        self.vy += self.gravity
+
+        dx = get_axis(input_state, "x")
+        self.vx = dx * self.speed
+
+        if input_state.events["z"].just_pressed:
+            self.vy = -self.jump_strength
+
+        self.dest.x += self.vx
+        self.dest.y += self.vy
 
 
-def get_movement(input_state):
-    return input_state.events["right"].held - input_state.events["left"].held
+def get_axis(input_state, axis):
+    if axis.lower() == "x":
+        return input_state.events["right"].held - input_state.events["left"].held
+    elif axis.lower() == "y":
+        return input_state.events["down"].held - input_state.events["up"].held
+    else:
+        raise ValueError("Why?")
 
 
 def run():
@@ -32,7 +54,7 @@ def run():
                 sys.exit()
             input_state.update_input(event)
 
-        player.dest.x += get_movement(input_state)
+        player.update(input_state)
 
         display.fill("black")
         pg.draw.rect(display, "lime", player.dest)
