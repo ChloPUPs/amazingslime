@@ -8,4 +8,35 @@ grid:
   6,5: stone
   8,3: stone
   9,3: stone
-  16,8: stone # unreachable :skull:
+  15,7: stone
+  16,7: stone
+  16,6: stone
+  17,7: stone
+  17,10: stone
+  17,13: stone
+  1,10: stone
+  2,10: stone
+  3,10: stone
+  4,10: stone
+  5,10: stone
+  6,10: stone
+  7,10: stone
+  8,10: stone
+  9,10: stone
+  10,10: stone
+  11,10: stone
+  12,10: stone
+  13,10: stone
+  14,10: stone
+  15,10: stone
+  15,9: stone
+  15,8: stone
+  7,8: stone
+  8,6: stone
+  0,10: stone
+  14,13: stone
+  11,13: stone
+  8,13: stone
+  5,13: stone
+  4,13: stone
+  3,13: stone
