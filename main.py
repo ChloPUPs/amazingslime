@@ -3,7 +3,6 @@
 from typing import Literal
 import pygame as pg
 import sys
-from enum import Enum, auto
 import yaml
 from systems import input_sys
 
@@ -120,6 +119,12 @@ def run() -> None:
                 pg.quit()
                 sys.exit()
             input_state.update_input(event)
+
+        if input_state.events["r"].just_pressed:
+            player.dest.x = 20.0
+            player.dest.y = 20.0
+            player.vx = 0.0
+            player.vy = 0.0
 
         player.update_vel(input_state)
         player.reset_on_ground()

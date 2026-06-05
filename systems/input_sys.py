@@ -12,6 +12,7 @@ class InputState:
             'space': _EventInfo(pg.K_SPACE),
             'mouse1': _MouseEventInfo(1),
             'z': _EventInfo(pg.K_z),
+            'r': _EventInfo(pg.K_r),
         }
 
 
