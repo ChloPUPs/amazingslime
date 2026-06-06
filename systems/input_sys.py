@@ -15,6 +15,7 @@ class InputState:
             'mouse1': _MouseEventInfo(1),
             'z': _EventInfo(pg.K_z),
             'r': _EventInfo(pg.K_r),
+            'i': _EventInfo(pg.K_i),
         }
 
 

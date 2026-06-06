@@ -1,27 +1,45 @@
 # Maybe add text in levels? Level Text in The Levl
 
-from typing import Literal
-from enum import Enum, auto
+from typing import Literal, NamedTuple
+from collections.abc import Callable
 import pygame as pg
 import yaml
 from systems import input_sys
 
 
-class BlockType(Enum):
-    STONE = auto()
+class Block(NamedTuple):
+    block_id: str
+    img: pg.Surface
+    solid: bool = True
+    on_collide: Callable[[], None] | None = None
 
-    @staticmethod
-    def from_str(x: str) -> BlockType:
-        match x:
-            case "stone":
-                return BlockType.STONE
-            case _:
-                raise ValueError(f"BlockType '{x}' is undefined")
+
+class BlockIDError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class BlockRegistry:
+    def __init__(self) -> None:
+        self._registered: dict[str, Block] = {}
+
+    def register(self, new: Block) -> None:
+        if new.block_id in self._registered:
+            raise BlockIDError(f"ID '{new.block_id}' already taken.")
+
+        self._registered[new.block_id] = new
+
+    def of_id(self, id: str) -> Block:
+        if id not in self._registered:
+            raise BlockIDError(f"ID '{id}' is not registered.")
+
+        return self._registered[id]
 
 
 class Level:
     @staticmethod
-    def load_from_file(path: str):
+    def load_from_file(path: str, block_registry: BlockRegistry):
         with open(path) as f:
             level_data = yaml.safe_load(f)
             level_name = level_data["name"]
@@ -30,31 +48,28 @@ class Level:
             for old_key in level_data["grid"]:
                 x = int(old_key.split(",")[0])
                 y = int(old_key.split(",")[1])
-                level_grid[(x, y)] = BlockType.from_str(level_data["grid"][old_key])
+                block_id = level_data["grid"][old_key]
+                level_grid[(x, y)] = block_registry.of_id(block_id)
 
-        return Level(level_name, level_grid, tile_size, {
-            BlockType.STONE: pg.image.load("levels/stone.png").convert(),
-        })
+        return Level(level_name, level_grid, tile_size)
 
     def __init__(self,
             name: str | None,
-            grid: dict[tuple[int, int], BlockType],
-            tile_size: int,
-            assets: dict[BlockType, pg.Surface]) -> None:
+            grid: dict[tuple[int, int], Block],
+            tile_size: int) -> None:
         self.name = name # Use file path if None
         self.grid = grid
-        self.assets = assets
         self._tile_size = tile_size
 
     def draw(self, display: pg.Surface) -> None:
-        for tile_pos in self.grid:
-            self.__draw_tile(display, tile_pos)
+        for pos in self.grid:
+            self.__draw_tile(display, pos)
 
-    def __draw_tile(self, display: pg.Surface, tile_pos: tuple[int, int]) -> None:
-        pos = (
-            tile_pos[0] * self._tile_size, # x
-            tile_pos[1] * self._tile_size) # y
-        display.blit(self.assets[self.grid[tile_pos]], pos)
+    def __draw_tile(self, display: pg.Surface, grid_pos: tuple[int, int]) -> None:
+        pixel_pos = (
+            grid_pos[0] * self._tile_size, # x
+            grid_pos[1] * self._tile_size) # y
+        display.blit(self.grid[grid_pos].img, pixel_pos)
 
 
 class Player:
@@ -83,23 +98,12 @@ class Player:
 
         self.on_ground = False
 
-    def collide_block(self, rect: pg.FRect | pg.Rect) -> None:
-        if self.__is_colliding_x(rect):
-            if self.velx > 0.0:
-                self.dest.right = rect.left
-            else:
-                self.dest.left = rect.right
-            self.velx = 0.0
-
-        if self.__is_colliding_y(rect):
-            if self.vely > 0.0:
-                self.dest.bottom = rect.top
-            else:
-                self.dest.top = rect.bottom
-            self.vely = 0.0
-
-        if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
-            self.on_ground = True
+    def collide_block(self, block_data: Block, grid_pos: tuple[int, int], tile_size: int) -> None:
+        rect = pg.Rect(*grid_to_pixel(grid_pos, tile_size), tile_size, tile_size)
+        if block_data.solid:
+            self.__collide_solid_block(rect)
+        if block_data.on_collide:
+            block_data.on_collide()
 
     def collide_walls_x(self, screen_width: int) -> None:
         next_x = self.dest.x + self.velx
@@ -132,6 +136,23 @@ class Player:
                 self.dest.w, self.dest.h # w, h
                 ).colliderect(rect)
 
+    def __collide_solid_block(self, rect: pg.Rect | pg.FRect) -> None:
+        if self.__is_colliding_x(rect):
+            if self.velx > 0.0:
+                self.dest.right = rect.left
+            else:
+                self.dest.left = rect.right
+            self.velx = 0.0
+
+        if self.__is_colliding_y(rect):
+            if self.vely > 0.0:
+                self.dest.bottom = rect.top
+            else:
+                self.dest.top = rect.bottom
+            self.vely = 0.0
+
+        if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
+            self.on_ground = True
 
 
 def get_axis(input_state: input_sys.InputState, axis: Literal["x", "y"]) -> float:
@@ -143,6 +164,22 @@ def get_axis(input_state: input_sys.InputState, axis: Literal["x", "y"]) -> floa
         raise ValueError("Why?")
 
 
+def grid_to_pixel(pos: tuple[int, int], tile_size: int) -> tuple[int, int]:
+    return (pos[0] * tile_size, pos[1] * tile_size)
+
+
+def pixel_to_grid(pos: tuple[int, int], tile_size: int) -> tuple[int, int]:
+    x = int(pos[0] // tile_size)
+    y = int(pos[1] // tile_size)
+    return (x, y)
+
+
+def get_real_mouse_pos() -> tuple[int, int]:
+    """Gets the mouse position from the perspective of the display instead of the screen."""
+    mouse_pos = pg.mouse.get_pos()
+    return (mouse_pos[0] // 2, mouse_pos[1] // 2)
+
+
 def run() -> None:
     pg.init()
 
@@ -152,30 +189,40 @@ def run() -> None:
     screen = pg.display.set_mode((640, 480))
     display = pg.Surface((screen.width / 2, screen.height / 2))
     clock = pg.Clock()
+    info_font = pg.font.SysFont("Arial", 16)
+    display_info = False
     input_state = input_sys.InputState()
 
+    block_registry = BlockRegistry()
+    block_registry.register(Block("stone", img=pg.image.load("levels/stone.png").convert(), solid=True))
+    block_registry.register(Block("grass_blades", img=pg.image.load("levels/grass_blades.png").convert(), solid=False))
+
     player = Player(20.0, 20.0)
-    level = Level.load_from_file("levels/test_level.yaml")
+    level = Level.load_from_file("levels/test_level.yaml", block_registry)
 
     while True:
         input_state.update()
 
         if input_state.events["r"].just_pressed:
             player.reset()
+        if input_state.events["i"].just_pressed:
+            display_info = not display_info
 
         player.update_independent_movement(input_state)
         player.collide_walls_x(screen.get_width())
-        for old_key in level.grid:
-            player.collide_block(pg.Rect(old_key[0] * TILE_SIZE, old_key[1] * TILE_SIZE, 16, 16))
+        for pos, block_data in level.grid.items():
+            player.collide_block(block_data, pos, TILE_SIZE)
         player.apply_vel()
 
         display.fill("black")
         level.draw(display)
         pos = (player.dest.x + player.img_offset[0], player.dest.y + player.img_offset[1])
         display.blit(player.img, pos)
-        font = pg.font.SysFont("Arial", 16)
-        text = font.render(f"{level.name}", True, "white")
-        display.blit(text, (5, 5))
+
+        if display_info:
+            mouse_grid_pos = pixel_to_grid(get_real_mouse_pos(), TILE_SIZE)
+            text = info_font.render(f"lvlname: {level.name}\nmousegridpos: {mouse_grid_pos}", True, "white")
+            display.blit(text, (5, 5))
 
         screen.blit(pg.transform.scale(display, screen.get_size()))
         clock.tick(FPS_TARGET)

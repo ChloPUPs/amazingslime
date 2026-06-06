@@ -1,9 +1,13 @@
 name: test level !!
 tile_size: 16
 grid:
+  4,9: grass_blades
+  12,9: grass_blades
+  14,12: grass_blades
   1,4: stone
   2,4: stone
   3,4: stone
+  3,3: grass_blades
   4,4: stone
   5,5: stone
   6,5: stone
