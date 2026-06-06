@@ -1,21 +1,46 @@
 # Maybe add text in levels? Level Text in The Levl
 
 from typing import Literal
+from enum import Enum, auto
 import pygame as pg
-import sys
 import yaml
 from systems import input_sys
 
 
-type BlockID = Literal["stone"]
+class BlockType(Enum):
+    STONE = auto()
+
+    @staticmethod
+    def from_str(x: str) -> BlockType:
+        match x:
+            case "stone":
+                return BlockType.STONE
+            case _:
+                raise ValueError(f"BlockType '{x}' is undefined")
 
 
 class Level:
+    @staticmethod
+    def load_from_file(path: str):
+        with open(path) as f:
+            level_data = yaml.safe_load(f)
+            level_name = level_data["name"]
+            tile_size = level_data["tile_size"]
+            level_grid = {}
+            for old_key in level_data["grid"]:
+                x = int(old_key.split(",")[0])
+                y = int(old_key.split(",")[1])
+                level_grid[(x, y)] = BlockType.from_str(level_data["grid"][old_key])
+
+        return Level(level_name, level_grid, tile_size, {
+            BlockType.STONE: pg.image.load("levels/stone.png").convert(),
+        })
+
     def __init__(self,
             name: str | None,
-            grid: dict[tuple[int, int], BlockID],
+            grid: dict[tuple[int, int], BlockType],
             tile_size: int,
-            assets: dict[BlockID, pg.Surface]) -> None:
+            assets: dict[BlockType, pg.Surface]) -> None:
         self.name = name # Use file path if None
         self.grid = grid
         self.assets = assets
@@ -28,57 +53,71 @@ class Level:
 
 
 class Player:
-    def __init__(self) -> None:
+    def __init__(self, start_x: float, start_y: float) -> None:
+        self._start_x = start_x
+        self._start_y = start_y
         self.speed = 1.2
         self.jump_strength = 3.4
         self.gravity = 0.16
-        self.dest = pg.FRect(20.0, 20.0, 16.0, 14.0)
-        self.vx = 0.0
-        self.vy = 0.0
+        self.dest = pg.FRect(start_x, start_y, 16.0, 14.0)
+        self.velx = 0.0
+        self.vely = 0.0
         self.img = pg.image.load("player/amazslime.png").convert_alpha()
         self.img_offset = (0.0, -2.0)
         self.on_ground = False
 
-    def reset_on_ground(self):
-        self.on_ground = False
-
-    def update_vel(self, input_state: input_sys.InputState) -> None:
+    def update_independent_movement(self, input_state: input_sys.InputState) -> None:
         if not self.on_ground:
-            self.vy += self.gravity
+            self.vely += self.gravity
 
-        dx = get_axis(input_state, "x")
-        self.vx = dx * self.speed
+        direction_x = get_axis(input_state, "x")
+        self.velx = direction_x * self.speed
 
         if input_state.events["z"].just_pressed and self.on_ground:
-            self.vy = -self.jump_strength
+            self.vely = -self.jump_strength
+
+        self.on_ground = False
 
     def collide(self, rect: pg.FRect | pg.Rect) -> None:
-        if pg.Rect(
-                self.dest.x + self.vx, self.dest.y, # x, y
-                self.dest.w, self.dest.h # w, h
-                ).colliderect(rect):
-            if self.vx > 0.0:
+        if self.__is_colliding_x(rect):
+            if self.velx > 0.0:
                 self.dest.right = rect.left
             else:
                 self.dest.left = rect.right
-            self.vx = 0.0
+            self.velx = 0.0
 
-        if pg.FRect(
-                self.dest.x, self.dest.y + self.vy, # x, y
-                self.dest.w, self.dest.h # w, h
-                ).colliderect(rect):
-            if self.vy > 0.0:
+        if self.__is_colliding_y(rect):
+            if self.vely > 0.0:
                 self.dest.bottom = rect.top
             else:
                 self.dest.top = rect.bottom
-            self.vy = 0.0
+            self.vely = 0.0
 
         if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
             self.on_ground = True
 
     def apply_vel(self) -> None:
-        self.dest.x += self.vx
-        self.dest.y += self.vy
+        self.dest.x += self.velx
+        self.dest.y += self.vely
+
+    def reset(self) -> None:
+        self.dest.x = self._start_x
+        self.dest.y = self._start_y
+        self.velx = 0.0
+        self.vely = 0.0
+
+    def __is_colliding_x(self, rect: pg.FRect | pg.Rect) -> bool:
+        return pg.Rect(
+                self.dest.x + self.velx, self.dest.y, # x, y
+                self.dest.w, self.dest.h # w, h
+                ).colliderect(rect)
+
+    def __is_colliding_y(self, rect: pg.FRect | pg.Rect) -> bool:
+        return pg.FRect(
+                self.dest.x, self.dest.y + self.vely, # x, y
+                self.dest.w, self.dest.h # w, h
+                ).colliderect(rect)
+
 
 
 def get_axis(input_state: input_sys.InputState, axis: Literal["x", "y"]) -> float:
@@ -101,35 +140,18 @@ def run() -> None:
     clock = pg.Clock()
     input_state = input_sys.InputState()
 
-    player = Player()
-
-    with open("levels/test_level.yaml") as f:
-        level_data = yaml.safe_load(f)
-        level_name = level_data["name"]
-        level_grid = {(int(key.split(",")[0]), int(key.split(",")[1])): level_data["grid"][key] for key in level_data["grid"]}
-
-    level = Level(level_name, level_grid, TILE_SIZE, {
-        "stone": pg.image.load("levels/stone.png").convert(),
-    })
+    player = Player(20.0, 20.0)
+    level = Level.load_from_file("levels/test_level.yaml")
 
     while True:
-        input_state.update_just_pressed()
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                sys.exit()
-            input_state.update_input(event)
+        input_state.update()
 
         if input_state.events["r"].just_pressed:
-            player.dest.x = 20.0
-            player.dest.y = 20.0
-            player.vx = 0.0
-            player.vy = 0.0
+            player.reset()
 
-        player.update_vel(input_state)
-        player.reset_on_ground()
-        for key in level.grid:
-            player.collide(pg.Rect(key[0] * TILE_SIZE, key[1] * TILE_SIZE, 16, 16))
+        player.update_independent_movement(input_state)
+        for old_key in level.grid:
+            player.collide(pg.Rect(old_key[0] * TILE_SIZE, old_key[1] * TILE_SIZE, 16, 16))
         player.apply_vel()
 
         display.fill("black")

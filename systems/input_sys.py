@@ -1,8 +1,10 @@
 import pygame as pg
+import sys
 
 
 class InputState:
-    def __init__(self):
+    def __init__(self, auto_implement_quit=True):
+        self.__quit_active = auto_implement_quit
         self.events = {
             'quit': _EventInfo(pg.QUIT, False),
             'left': _EventInfo(pg.K_LEFT),
@@ -16,7 +18,7 @@ class InputState:
         }
 
 
-    def update_just_pressed(self):
+    def __update_just_pressed(self):
         """Makes just_pressed and just_released things just pressed."""
         for ekey in self.events:
             # Make sure just_pressed things are JUST pressed
@@ -26,7 +28,7 @@ class InputState:
                 self.events[ekey].just_released = False
 
 
-    def update_input(self, event):
+    def __update_input(self, event):
         for ekey in self.events:
             # Check event stuff for every non key thing in the thing
             if event.type == self.events[ekey].eventtype and (
@@ -55,6 +57,14 @@ class InputState:
                     if event.button == self.events[ekey].button:
                         self.events[ekey].held = False
                         self.events[ekey].just_released = True
+
+    def update(self):
+        self.__update_just_pressed()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            self.__update_input(event)
 
 
 class _EventInfo:

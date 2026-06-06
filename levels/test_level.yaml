@@ -1,4 +1,5 @@
 name: test level !!
+tile_size: 16
 grid:
   1,4: stone
   2,4: stone
