@@ -247,7 +247,12 @@ def run() -> None:
 
         if display_info:
             mouse_grid_pos = pixel_to_grid(get_real_mouse_pos(), TILE_SIZE)
-            text = info_font.render(f"lvlname: {level.name}\nmousegridpos: {mouse_grid_pos}", True, "white")
+            text = info_font.render(
+                f"lvlname: {level.name}\n" \
+                f"mousegridpos: {mouse_grid_pos}\n" \
+                f"playerx: {player.dest.x:.4f}\n" \
+                f"playery: {player.dest.y:.4f}",
+                True, "white")
             display.blit(text, (5, 5))
 
         screen.blit(pg.transform.scale(display, screen.get_size()))
