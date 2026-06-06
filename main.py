@@ -59,11 +59,11 @@ class Player:
         self.speed = 1.2
         self.jump_strength = 3.4
         self.gravity = 0.16
-        self.dest = pg.FRect(start_x, start_y, 16.0, 14.0)
+        self.dest = pg.FRect(start_x, start_y, 14.0, 14.0)
         self.velx = 0.0
         self.vely = 0.0
         self.img = pg.image.load("player/amazslime.png").convert_alpha()
-        self.img_offset = (0.0, -2.0)
+        self.img_offset = (-1.0, -2.0)
         self.on_ground = False
 
     def update_independent_movement(self, input_state: input_sys.InputState) -> None:
