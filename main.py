@@ -51,8 +51,10 @@ class Level:
             self.__draw_tile(display, tile_pos)
 
     def __draw_tile(self, display: pg.Surface, tile_pos: tuple[int, int]) -> None:
-        display.blit(self.assets[self.grid[tile_pos]], 
-                    (tile_pos[0] * self._tile_size, tile_pos[1] * self._tile_size))
+        pos = (
+            tile_pos[0] * self._tile_size, # x
+            tile_pos[1] * self._tile_size) # y
+        display.blit(self.assets[self.grid[tile_pos]], pos)
 
 
 class Player:
