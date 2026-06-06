@@ -194,8 +194,16 @@ def run() -> None:
     input_state = input_sys.InputState()
 
     block_registry = BlockRegistry()
-    block_registry.register(Block("stone", img=pg.image.load("levels/stone.png").convert(), solid=True))
-    block_registry.register(Block("grass_blades", img=pg.image.load("levels/grass_blades.png").convert(), solid=False))
+
+    block_registry.register(Block(
+        block_id="stone",
+        img=pg.image.load("levels/stone.png").convert(),
+        solid=True))
+
+    block_registry.register(Block(
+        block_id="grass_blades",
+        img=pg.image.load("levels/grass_blades.png").convert(),
+        solid=False))
 
     player = Player(20.0, 20.0)
     level = Level.load_from_file("levels/test_level.yaml", block_registry)
