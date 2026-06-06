@@ -78,7 +78,7 @@ class Player:
 
         self.on_ground = False
 
-    def collide(self, rect: pg.FRect | pg.Rect) -> None:
+    def collide_block(self, rect: pg.FRect | pg.Rect) -> None:
         if self.__is_colliding_x(rect):
             if self.velx > 0.0:
                 self.dest.right = rect.left
@@ -95,6 +95,15 @@ class Player:
 
         if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
             self.on_ground = True
+
+    def collide_walls(self, screen_width: int, screen_height: int) -> None:
+        next_x = self.dest.x + self.velx
+        if next_x < 0.0:
+            self.dest.left = 0.0
+            self.velx = 0.0
+        elif next_x > screen_width:
+            self.dest.right = screen_width
+            self.velx = 0.0
 
     def apply_vel(self) -> None:
         self.dest.x += self.velx
@@ -150,8 +159,9 @@ def run() -> None:
             player.reset()
 
         player.update_independent_movement(input_state)
+        player.collide_walls(screen.get_width(), screen.get_height())
         for old_key in level.grid:
-            player.collide(pg.Rect(old_key[0] * TILE_SIZE, old_key[1] * TILE_SIZE, 16, 16))
+            player.collide_block(pg.Rect(old_key[0] * TILE_SIZE, old_key[1] * TILE_SIZE, 16, 16))
         player.apply_vel()
 
         display.fill("black")
