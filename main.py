@@ -47,9 +47,12 @@ class Level:
         self._tile_size = tile_size
 
     def draw(self, display: pg.Surface) -> None:
-        for key in self.grid:
-            display.blit(self.assets[self.grid[key]], 
-                    (key[0] * self._tile_size, key[1] * self._tile_size))
+        for tile_pos in self.grid:
+            self.__draw_tile(display, tile_pos)
+
+    def __draw_tile(self, display: pg.Surface, tile_pos: tuple[int, int]) -> None:
+        display.blit(self.assets[self.grid[tile_pos]], 
+                    (tile_pos[0] * self._tile_size, tile_pos[1] * self._tile_size))
 
 
 class Player:
@@ -59,11 +62,11 @@ class Player:
         self.speed = 1.2
         self.jump_strength = 3.4
         self.gravity = 0.16
-        self.dest = pg.FRect(start_x, start_y, 14.0, 14.0)
+        self.dest = pg.FRect(start_x, start_y, 14.0, 13.0)
         self.velx = 0.0
         self.vely = 0.0
         self.img = pg.image.load("player/amazslime.png").convert_alpha()
-        self.img_offset = (-1.0, -2.0)
+        self.img_offset = (-1.0, -3.0)
         self.on_ground = False
 
     def update_independent_movement(self, input_state: input_sys.InputState) -> None:
