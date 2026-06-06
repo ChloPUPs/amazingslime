@@ -1,10 +1,16 @@
 # Maybe add text in levels? Level Text in The Levl
 
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, TypedDict
 from collections.abc import Callable
 import pygame as pg
 import yaml
+import sys
+import os
 from systems import input_sys
+
+
+class Config(TypedDict):
+    default_level: str
 
 
 class Block(NamedTuple):
@@ -181,6 +187,18 @@ def get_real_mouse_pos() -> tuple[int, int]:
 
 
 def run() -> None:
+    args = sys.argv[1:]
+    if len(args) > 1:
+        raise RuntimeError(f"Invalid argument count; expected: <1, got: {len(args)}")
+
+    with open("config.yaml") as f:
+        config: Config = yaml.safe_load(f)
+
+    level_path = __get_args_level_path(args, config)
+
+    if not os.path.isfile(level_path):
+        raise RuntimeError(f"File at path '{level_path}' doesn't exist.")
+
     pg.init()
 
     FPS_TARGET = 60
@@ -206,7 +224,7 @@ def run() -> None:
         solid=False))
 
     player = Player(20.0, 20.0)
-    level = Level.load_from_file("levels/test_level.yaml", block_registry)
+    level = Level.load_from_file(level_path, block_registry)
 
     while True:
         input_state.update()
@@ -235,6 +253,13 @@ def run() -> None:
         screen.blit(pg.transform.scale(display, screen.get_size()))
         clock.tick(FPS_TARGET)
         pg.display.update()
+
+
+def __get_args_level_path(args: list[str], config: Config):
+    try:
+        return args[0]
+    except IndexError:
+        return config["default_level"]
 
 
 if __name__ == "__main__":
