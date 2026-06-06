@@ -96,7 +96,7 @@ class Player:
         if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
             self.on_ground = True
 
-    def collide_walls(self, screen_width: int, screen_height: int) -> None:
+    def collide_walls_x(self, screen_width: int) -> None:
         next_x = self.dest.x + self.velx
         if next_x < 0.0:
             self.dest.left = 0.0
@@ -159,7 +159,7 @@ def run() -> None:
             player.reset()
 
         player.update_independent_movement(input_state)
-        player.collide_walls(screen.get_width(), screen.get_height())
+        player.collide_walls_x(screen.get_width())
         for old_key in level.grid:
             player.collide_block(pg.Rect(old_key[0] * TILE_SIZE, old_key[1] * TILE_SIZE, 16, 16))
         player.apply_vel()
