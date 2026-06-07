@@ -255,6 +255,16 @@ def run() -> None:
         img=pg.image.load("levels/grass_blades.png").convert(),
         solid=False))
 
+    block_registry.register(Block(
+        block_id="rock",
+        img=pg.image.load("levels/rock.png").convert(),
+        solid=False))
+
+    block_registry.register(Block(
+        block_id="rock_flipped",
+        img=pg.transform.flip(pg.image.load("levels/rock.png").convert(), True, False),
+        solid=False))
+
     player = Player(20.0, 20.0)
     level = Level.load_from_file(level_path, block_registry)
 

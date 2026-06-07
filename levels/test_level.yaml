@@ -45,3 +45,10 @@ grid:
   5,13: stone
   4,13: stone
   3,13: stone
+  9,2: grass_blades
+  3,12: grass_blades
+  17,6: grass_blades
+  6,4: rock
+  10,9: rock_flipped
+  17,9: rock
+  8,12: rock_flipped
