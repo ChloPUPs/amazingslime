@@ -112,8 +112,6 @@ class Player:
         surround = self.__get_surround(level)
         for pos, block in surround.items():
             self.collide_block(block, pos, level.tile_size)
-        # for pos, block in level.grid.items():
-        #     self.collide_block(block, pos, tile_size)
 
     def collide_block(self, block_data: Block, grid_pos: tuple[int, int], tile_size: int) -> None:
         rect = pg.Rect(*grid_to_pixel(grid_pos, tile_size), tile_size, tile_size)
