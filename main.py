@@ -292,8 +292,8 @@ def run() -> None:
             text = info_font.render(
                 f"lvlname: {level.name}\n" \
                 f"mousegridpos: {mouse_grid_pos}\n" \
-                f"playerx: {player.dest.x:.4f}, vel: {player.velx}\n" \
-                f"playery: {player.dest.y:.4f}, vel: {player.vely}\n" \
+                f"playerx: {player.dest.x:.4f}, vel: {player.velx:.4f}\n" \
+                f"playery: {player.dest.y:.4f}, vel: {player.vely:.4f}\n" \
                 f"playergrid: {pixel_to_grid((int(player.dest.x), int(player.dest.y)), TILE_SIZE)}" \
                 , True, "white")
             display.blit(text, (5, 5))
