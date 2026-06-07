@@ -88,6 +88,7 @@ class Player:
         self.dest = pg.FRect(start_x, start_y, 14.0, 13.0)
         self.velx = 0.0
         self.vely = 0.0
+        self.terminalvely = 6.0
         self.img = pg.image.load("player/amazslime.png").convert_alpha()
         self.img_offset = (-1.0, -3.0)
         self.on_ground = False
@@ -102,12 +103,18 @@ class Player:
         if input_state.events["z"].just_pressed and self.on_ground:
             self.vely = -self.jump_strength
 
+        if self.vely > self.terminalvely:
+            self.vely = self.terminalvely
+
         self.on_ground = False
 
     def collide_level(self, level: Level, tile_size: int) -> None:
         surround = self.__get_surround(level, tile_size)
+        print(surround.keys())
         for pos, block in surround.items():
             self.collide_block(block, pos, tile_size)
+        # for pos, block in level.grid.items():
+        #     self.collide_block(block, pos, tile_size)
 
     def collide_block(self, block_data: Block, grid_pos: tuple[int, int], tile_size: int) -> None:
         rect = pg.Rect(*grid_to_pixel(grid_pos, tile_size), tile_size, tile_size)
@@ -167,13 +174,13 @@ class Player:
 
     def __get_surround(self, level: Level, tile_size: int) -> dict[tuple[int, int], Block]:
         surround: dict[tuple[int, int], Block] = {}
+        grid_dest = pixel_to_grid((int(self.dest.x), int(self.dest.y)), tile_size)
 
         for pos, _ in level.grid.items():
-            grid_dest = pixel_to_grid((int(self.dest.x), int(self.dest.y)), tile_size)
-            if (pos[0] >= grid_dest[0] - 1
-                    and pos[0] <= grid_dest[0] + 1
-                    and pos[1] >= grid_dest[1] - 1
-                    and pos[1] <= grid_dest[1] + 1):
+            if (pos[0] >= grid_dest[0] - 2.0
+                    and pos[0] <= grid_dest[0] + 2.0
+                    and pos[1] >= grid_dest[1] - 2.0
+                    and pos[1] <= grid_dest[1] + 2.0):
                 surround[pos] = level.grid[pos]
 
         return surround
@@ -196,6 +203,10 @@ def pixel_to_grid(pos: tuple[int, int], tile_size: int) -> tuple[int, int]:
     x = int(pos[0] // tile_size)
     y = int(pos[1] // tile_size)
     return (x, y)
+
+
+def pixel_to_grid_float(x: float, tile_size: int) -> float:
+    return int(x // tile_size)
 
 
 def get_real_mouse_pos() -> tuple[int, int]:
@@ -225,7 +236,7 @@ def run() -> None:
     screen = pg.display.set_mode((640, 480))
     display = pg.Surface((screen.width / 2, screen.height / 2))
     clock = pg.Clock()
-    info_font = pg.font.SysFont("Arial", 16)
+    info_font = pg.font.SysFont("Consolas", 10)
     display_info = False
     input_state = input_sys.InputState()
 
@@ -267,9 +278,10 @@ def run() -> None:
             text = info_font.render(
                 f"lvlname: {level.name}\n" \
                 f"mousegridpos: {mouse_grid_pos}\n" \
-                f"playerx: {player.dest.x:.4f}\n" \
-                f"playery: {player.dest.y:.4f}",
-                True, "white")
+                f"playerx: {player.dest.x:.4f}, vel: {player.velx}\n" \
+                f"playery: {player.dest.y:.4f}, vel: {player.vely}\n" \
+                f"playergrid: {pixel_to_grid((int(player.dest.x), int(player.dest.y)), TILE_SIZE)}" \
+                , True, "white")
             display.blit(text, (5, 5))
 
         screen.blit(pg.transform.scale(display, screen.get_size()))
