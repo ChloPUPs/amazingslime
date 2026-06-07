@@ -104,6 +104,11 @@ class Player:
 
         self.on_ground = False
 
+    def collide_level(self, level: Level, tile_size: int) -> None:
+        surround = self.__get_surround(level, tile_size)
+        for pos, block in surround.items():
+            self.collide_block(block, pos, tile_size)
+
     def collide_block(self, block_data: Block, grid_pos: tuple[int, int], tile_size: int) -> None:
         rect = pg.Rect(*grid_to_pixel(grid_pos, tile_size), tile_size, tile_size)
         if block_data.solid:
@@ -159,6 +164,19 @@ class Player:
 
         if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
             self.on_ground = True
+
+    def __get_surround(self, level: Level, tile_size: int) -> dict[tuple[int, int], Block]:
+        surround: dict[tuple[int, int], Block] = {}
+
+        for pos, _ in level.grid.items():
+            grid_dest = pixel_to_grid((int(self.dest.x), int(self.dest.y)), tile_size)
+            if (pos[0] >= grid_dest[0] - 1
+                    and pos[0] <= grid_dest[0] + 1
+                    and pos[1] >= grid_dest[1] - 1
+                    and pos[1] <= grid_dest[1] + 1):
+                surround[pos] = level.grid[pos]
+
+        return surround
 
 
 def get_axis(input_state: input_sys.InputState, axis: Literal["x", "y"]) -> float:
@@ -236,8 +254,7 @@ def run() -> None:
 
         player.update_independent_movement(input_state)
         player.collide_walls_x(screen.get_width())
-        for pos, block_data in level.grid.items():
-            player.collide_block(block_data, pos, TILE_SIZE)
+        player.collide_level(level, TILE_SIZE)
         player.apply_vel()
 
         display.fill("black")
