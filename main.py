@@ -110,7 +110,6 @@ class Player:
 
     def collide_level(self, level: Level, tile_size: int) -> None:
         surround = self.__get_surround(level, tile_size)
-        print(surround.keys())
         for pos, block in surround.items():
             self.collide_block(block, pos, tile_size)
         # for pos, block in level.grid.items():
@@ -123,14 +122,18 @@ class Player:
         if block_data.on_collide:
             block_data.on_collide()
 
-    def collide_walls_x(self, screen_width: int) -> None:
+    def collide_walls_x(self, display_width: int) -> None:
         next_x = self.dest.x + self.velx
         if next_x < 0.0:
             self.dest.left = 0.0
             self.velx = 0.0
-        elif next_x > screen_width:
-            self.dest.right = screen_width
+        elif next_x + self.dest.w > display_width:
+            self.dest.right = display_width
             self.velx = 0.0
+
+    def collide_floor(self, display_height: int) -> None:
+        if self.dest.top + self.vely > display_height:
+            self.reset()
 
     def apply_vel(self) -> None:
         self.dest.x += self.velx
@@ -264,7 +267,8 @@ def run() -> None:
             display_info = not display_info
 
         player.update_independent_movement(input_state)
-        player.collide_walls_x(screen.get_width())
+        player.collide_walls_x(display.get_width())
+        player.collide_floor(display.get_height())
         player.collide_level(level, TILE_SIZE)
         player.apply_vel()
 
