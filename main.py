@@ -65,7 +65,7 @@ class Level:
             tile_size: int) -> None:
         self.name = name # Use file path if None
         self.grid = grid
-        self._tile_size = tile_size
+        self.tile_size = tile_size
 
     def draw(self, display: pg.Surface) -> None:
         for pos in self.grid:
@@ -73,8 +73,8 @@ class Level:
 
     def __draw_tile(self, display: pg.Surface, grid_pos: tuple[int, int]) -> None:
         pixel_pos = (
-            grid_pos[0] * self._tile_size, # x
-            grid_pos[1] * self._tile_size) # y
+            grid_pos[0] * self.tile_size, # x
+            grid_pos[1] * self.tile_size) # y
         display.blit(self.grid[grid_pos].img, pixel_pos)
 
 
@@ -108,10 +108,10 @@ class Player:
 
         self.on_ground = False
 
-    def collide_level(self, level: Level, tile_size: int) -> None:
-        surround = self.__get_surround(level, tile_size)
+    def collide_level(self, level: Level) -> None:
+        surround = self.__get_surround(level)
         for pos, block in surround.items():
-            self.collide_block(block, pos, tile_size)
+            self.collide_block(block, pos, level.tile_size)
         # for pos, block in level.grid.items():
         #     self.collide_block(block, pos, tile_size)
 
@@ -175,9 +175,9 @@ class Player:
         if pg.FRect(self.dest.x, self.dest.y + 1.0, self.dest.w, self.dest.h).colliderect(rect):
             self.on_ground = True
 
-    def __get_surround(self, level: Level, tile_size: int) -> dict[tuple[int, int], Block]:
+    def __get_surround(self, level: Level) -> dict[tuple[int, int], Block]:
         surround: dict[tuple[int, int], Block] = {}
-        grid_dest = pixel_to_grid((int(self.dest.x), int(self.dest.y)), tile_size)
+        grid_dest = pixel_to_grid((int(self.dest.x), int(self.dest.y)), level.tile_size)
 
         for pos, _ in level.grid.items():
             if (pos[0] >= grid_dest[0] - 2.0
@@ -234,7 +234,6 @@ def run() -> None:
     pg.init()
 
     FPS_TARGET = 60
-    TILE_SIZE = 16
 
     screen = pg.display.set_mode((640, 480))
     display = pg.Surface((screen.width / 2, screen.height / 2))
@@ -279,7 +278,7 @@ def run() -> None:
         player.update_independent_movement(input_state)
         player.collide_walls_x(display.get_width())
         player.collide_floor(display.get_height())
-        player.collide_level(level, TILE_SIZE)
+        player.collide_level(level)
         player.apply_vel()
 
         display.fill("black")
@@ -288,13 +287,13 @@ def run() -> None:
         display.blit(player.img, pos)
 
         if display_info:
-            mouse_grid_pos = pixel_to_grid(get_real_mouse_pos(), TILE_SIZE)
+            mouse_grid_pos = pixel_to_grid(get_real_mouse_pos(), level.tile_size)
             text = info_font.render(
                 f"lvlname: {level.name}\n" \
                 f"mousegridpos: {mouse_grid_pos}\n" \
                 f"playerx: {player.dest.x:.4f}, vel: {player.velx:.4f}\n" \
                 f"playery: {player.dest.y:.4f}, vel: {player.vely:.4f}\n" \
-                f"playergrid: {pixel_to_grid((int(player.dest.x), int(player.dest.y)), TILE_SIZE)}" \
+                f"playergrid: {pixel_to_grid((int(player.dest.x), int(player.dest.y)), level.tile_size)}" \
                 , True, "white")
             display.blit(text, (5, 5))
 
